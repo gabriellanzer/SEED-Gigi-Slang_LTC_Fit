@@ -1,0 +1,13 @@
+{
+    "version": "2.0",
+    "syncInterval": 0,
+    "snapshot": {
+        "resourceViewNodeIndex": 1,
+        "resourceViewResourceIndex": 3,
+        "cameraPos": [
+            0.0,
+            0.0,
+            -10.073090553283692
+        ]
+    }
+}

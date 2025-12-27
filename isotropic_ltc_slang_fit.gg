@@ -1,0 +1,394 @@
+{
+    "$schema": "gigischema.json",
+    "name": "SlangAutoDiff",
+    "version": "1.01",
+    "variables": [
+        {
+            "name": "Reset",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User",
+            "transient": true,
+            "UISettings": {
+                "UIHint": "Button"
+            },
+            "UIHint": "Button"
+        },
+        {
+            "name": "LTCPreviewOnLeftSide",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "OutputResolution",
+            "type": "Int2",
+            "dflt": "1024,512",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Drag",
+                "min": "32",
+                "max": "4096",
+                "step": "32"
+            }
+        },
+        {
+            "name": "TargetRoughness",
+            "type": "Float",
+            "dflt": "0.5",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Drag",
+                "min": "0",
+                "max": "1",
+                "step": "0.01"
+            }
+        },
+        {
+            "name": "TargetTheta",
+            "type": "Float",
+            "dflt": "0.0",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Angle"
+            }
+        },
+        {
+            "name": "LearningRate",
+            "type": "Float",
+            "dflt": "0.01",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Drag",
+                "min": "0.000000001",
+                "max": "1.0",
+                "step": "0.0000001"
+            }
+        },
+        {
+            "name": "LearningRatePower",
+            "type": "Float",
+            "dflt": "2.0",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Drag",
+                "min": "1",
+                "max": "20",
+                "step": "0.1"
+            }
+        },
+        {
+            "name": "WeightDecay",
+            "type": "Float",
+            "dflt": "0.01",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Drag",
+                "min": "0.0",
+                "max": "1.0",
+                "step": "0.01"
+            }
+        },
+        {
+            "name": "SampleCount",
+            "type": "Int",
+            "dflt": "32",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Drag",
+                "min": "8",
+                "max": "128"
+            }
+        },
+        {
+            "name": "TableSize",
+            "type": "Int2",
+            "dflt": "64, 64",
+            "visibility": "User",
+            "UISettings": {
+                "min": "1",
+                "max": "512",
+                "step": "1"
+            }
+        },
+        {
+            "name": "initialized",
+            "type": "Bool",
+            "dflt": "false",
+            "transient": true
+        },
+        {
+            "name": "linearTableSize",
+            "type": "Int"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "IsotropicInit",
+            "fileName": "SlangAutoDiff_IsotropicInit.hlsl",
+            "language": "Slang",
+            "entryPoint": "csmain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "LTCBuffer",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ],
+            "CSNumThreads": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "name": "IsotropicFit",
+            "fileName": "SlangAutoDiff_IsotropicFit.hlsl",
+            "language": "Slang",
+            "entryPoint": "csmain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "slangOptions": {
+                "process": true
+            },
+            "resources": [
+                {
+                    "name": "LTCBuffer",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ],
+            "CSNumThreads": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "name": "IsotropicRender",
+            "fileName": "SlangAutoDiff_IsotropicRender.hlsl",
+            "language": "Slang",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "LTCBuffer",
+                    "access": "SRV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Texture",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "LTC_Math.slang",
+            "type": "Shader",
+            "destFileName": "LTC_Math.slang"
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "Isotropic Init",
+                "editorPos": [
+                    425.0,
+                    210.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "LTCBuffer",
+                        "dstNode": "LTCBuffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "IsotropicInit"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "TableSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Isotropic Render",
+                "editorPos": [
+                    725.0,
+                    210.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "LTCBuffer",
+                        "dstNode": "Isotropic Fit",
+                        "dstPin": "LTCBuffer"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "IsotropicRender"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    603.0,
+                    258.0
+                ],
+                "transient": false,
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "variable": {
+                        "name": "OutputResolution"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Isotropic Fit",
+                "editorPos": [
+                    569.0,
+                    210.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "LTCBuffer",
+                        "dstNode": "Isotropic Init",
+                        "dstPin": "LTCBuffer"
+                    }
+                ],
+                "shader": {
+                    "name": "IsotropicFit"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "TableSize"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "SCREEN_MIN",
+                        "value": "0.001f"
+                    },
+                    {
+                        "name": "SCREEN_MAX",
+                        "value": "0.99f"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "LTCBuffer",
+                "editorPos": [
+                    315.0,
+                    210.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "variable": {
+                        "name": "linearTableSize"
+                    },
+                    "multiply": 48
+                }
+            }
+        }
+    ],
+    "setVars": [
+        {
+            "destination": {
+                "name": "initialized"
+            },
+            "AVar": {
+                "name": "Reset"
+            },
+            "op": "BitwiseNot",
+            "setBefore": false
+        },
+        {
+            "destination": {
+                "name": "Reset"
+            },
+            "ALiteral": "false",
+            "op": "Noop",
+            "setBefore": false,
+            "condition": {
+                "variable1": "initialized",
+                "comparison": "IsFalse"
+            }
+        },
+        {
+            "destination": {
+                "name": "linearTableSize"
+            },
+            "AVar": {
+                "name": "TableSize"
+            },
+            "AVarIndex": 0,
+            "op": "Multiply",
+            "BVar": {
+                "name": "TableSize"
+            },
+            "BVarIndex": 1
+        }
+    ],
+    "PrimaryOutput": {
+        "name": "Output"
+    }
+}
